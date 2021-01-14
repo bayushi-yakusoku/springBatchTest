@@ -24,23 +24,54 @@ public class SpringBatchHelloWorldApplication {
 	@Autowired
 	private StepBuilderFactory stepBuilderFactory;
 
-	@Bean
-	public Step step() {
-		return this.stepBuilderFactory.get("step1")
+	/* ********************************************
+	   STEPS
+	   ******************************************** */
+
+	//@Bean
+	public Step stepSimple() {
+		return this.stepBuilderFactory
+				.get("step1")
+				.tasklet((contribution, chunkContext) -> {
+					System.out.println("Hello, World!");
+					return RepeatStatus.FINISHED;
+				})
+				.build();
+	}
+
+	public Step stepWithParameter() {
+		return stepBuilderFactory
+				.get("Step1")
 				.tasklet(new Tasklet() {
 					@Override
-					public RepeatStatus execute(StepContribution contribution,
-												ChunkContext chunkContext) {
-						System.out.println("Hello, World!");
+					public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) {
+
+						String name = (String) chunkContext.getStepContext().getJobParameters().get("name");
+
+						System.out.println("Hello, World!, parameter Name:" + name);
+
 						return RepeatStatus.FINISHED;
 					}
-				}).build();
+				})
+				.build();
 	}
+
+	/* ********************************************
+	   JOBS
+	   ******************************************** */
 
 	@Bean
 	public Job job() {
 		return this.jobBuilderFactory.get("job")
-				.start(step())
+				.start(stepSimple())
+				.build();
+	}
+
+	@Bean
+	public  Job job1() {
+		return jobBuilderFactory
+				.get("job1")
+				.start(stepWithParameter())
 				.build();
 	}
 
