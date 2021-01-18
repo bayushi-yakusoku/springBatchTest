@@ -7,6 +7,8 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.job.CompositeJobParametersValidator;
+import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -15,6 +17,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+
+import javax.xml.validation.Validator;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
 
 @EnableBatchProcessing
 @SpringBootApplication
@@ -27,9 +33,39 @@ public class SpringBatchHelloWorldApplication {
 	private StepBuilderFactory stepBuilderFactory;
 
 	/* ********************************************
+	   PARAMETERS
+	   ******************************************** */
+
+	@Bean
+	public CompositeJobParametersValidator customValidator() {
+		CompositeJobParametersValidator customValidator = new CompositeJobParametersValidator();
+
+		DefaultJobParametersValidator defaultValidator =
+				new DefaultJobParametersValidator(
+						// Required parameters:
+						new String[] {"fileName", "name"},
+						// Optional parameters:
+						new String[] {"currentDate", "executionDate"});
+
+		defaultValidator.afterPropertiesSet();
+
+		customValidator.setValidators(
+				Arrays.asList(
+						new ParameterValidator(),
+						defaultValidator));
+
+		return customValidator;
+	}
+
+	/* ********************************************
 	   STEPS
 	   ******************************************** */
 
+	/**
+	 * Simple Step with a single print Hello, World!
+	 *
+	 * @return Step
+	 */
 	public Step stepSimple() {
 		return this.stepBuilderFactory
 				.get("step1")
@@ -40,6 +76,11 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Step that deals with parameters and print the value of name
+	 *
+	 * @return Step
+	 */
 	public Step stepWithParameter() {
 		return stepBuilderFactory
 				.get("Step1")
@@ -57,6 +98,13 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Tasklet that deals with parameters and show how to use Spring EL
+	 * with late binding to fill the method parameter
+	 *
+	 * @param name the value of the parameter 'name'
+	 * @return Tasklet
+	 */
 	@StepScope
 	@Bean
 	public Tasklet taskletWithLateBindingParameter(@Value("#{jobParameters['name']}") String name) {
@@ -70,6 +118,11 @@ public class SpringBatchHelloWorldApplication {
 		};
 	}
 
+	/**
+	 * Step to illustrate the use of late binding
+	 *
+	 * @return Step
+	 */
 	public Step StepWithParameterWithLateBinding() {
 		return stepBuilderFactory
 				.get("Step1")
@@ -83,7 +136,8 @@ public class SpringBatchHelloWorldApplication {
 
 	@Bean
 	public Job job() {
-		return this.jobBuilderFactory.get("job")
+		return this.jobBuilderFactory
+				.get("job")
 				.start(stepSimple())
 				.build();
 	}
@@ -101,6 +155,7 @@ public class SpringBatchHelloWorldApplication {
 		return jobBuilderFactory
 				.get("job2")
 				.start(StepWithParameterWithLateBinding())
+				.validator(customValidator())
 				.build();
 	}
 
