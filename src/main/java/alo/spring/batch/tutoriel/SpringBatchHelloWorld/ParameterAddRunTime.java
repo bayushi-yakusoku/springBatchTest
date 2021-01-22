@@ -1,6 +1,8 @@
 package alo.spring.batch.tutoriel.SpringBatchHelloWorld;
 
-import org.springframework.batch.core.JobParameter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.JobParametersIncrementer;
@@ -12,6 +14,8 @@ import java.util.Date;
  * Add current time as a job parameter
  */
 public class ParameterAddRunTime implements JobParametersIncrementer {
+
+    private static Logger logger = LoggerFactory.getLogger(ParameterAddRunTime.class);
 
     private static String runTimeKey = "run.time";
 
@@ -25,6 +29,8 @@ public class ParameterAddRunTime implements JobParametersIncrementer {
     @Override
     public JobParameters getNext(@Nullable JobParameters parameters) {
         JobParameters nextParameters = (parameters == null) ? new JobParameters() : parameters;
+
+        logger.info("Adding date to job parameters list");
 
         return new JobParametersBuilder(nextParameters).addDate(runTimeKey, new Date()).toJobParameters();
     }
