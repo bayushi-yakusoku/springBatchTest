@@ -1,14 +1,13 @@
 package alo.spring.batch.tutoriel.SpringBatchHelloWorld;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.StepContribution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -18,8 +17,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import javax.xml.validation.Validator;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
 
 @EnableBatchProcessing
@@ -45,7 +42,7 @@ public class SpringBatchHelloWorldApplication {
 						// Required parameters:
 						new String[] {"fileName", "name"},
 						// Optional parameters:
-						new String[] {"currentDate", "executionDate"});
+						new String[] {"currentDate", "executionDate", "run.id"});
 
 		defaultValidator.afterPropertiesSet();
 
@@ -139,6 +136,7 @@ public class SpringBatchHelloWorldApplication {
 		return this.jobBuilderFactory
 				.get("job")
 				.start(stepSimple())
+				.incrementer(new ParameterAddRunTime())
 				.build();
 	}
 
@@ -147,6 +145,7 @@ public class SpringBatchHelloWorldApplication {
 		return jobBuilderFactory
 				.get("job1")
 				.start(stepWithParameter())
+				.incrementer(new ParameterAddRunTime())
 				.build();
 	}
 
@@ -156,6 +155,7 @@ public class SpringBatchHelloWorldApplication {
 				.get("job2")
 				.start(StepWithParameterWithLateBinding())
 				.validator(customValidator())
+				.incrementer(new RunIdIncrementer())
 				.build();
 	}
 
