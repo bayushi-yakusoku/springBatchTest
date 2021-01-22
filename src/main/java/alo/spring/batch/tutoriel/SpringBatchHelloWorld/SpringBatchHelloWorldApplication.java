@@ -13,6 +13,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +61,7 @@ public class SpringBatchHelloWorldApplication {
 	}
 
 	/* ********************************************
-	   STEPS
+	   STEPS & TASKLETS
 	   ******************************************** */
 
 	/**
@@ -132,10 +133,35 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Step to illustrate the modification of the job context
+	 * @return Step
+	 */
+	@Bean
+	public Step stepWithContextModification() {
+		return stepBuilderFactory
+				.get("Step with Context modification")
+				.tasklet(taskletWithContextModification())
+				.build();
+	}
+
+	/**
+	 * Tasklet to illustrate the modification of the Job Context
+	 * @return Tasklet
+	 */
+	@Bean
+	public Tasklet taskletWithContextModification() {
+		return (new TaskletWithContextModification());
+	}
+
 	/* ********************************************
 	   JOBS
 	   ******************************************** */
 
+	/**
+	 * Job with increment parameters
+	 * @return job
+	 */
 	@Bean
 	public Job job() {
 		return this.jobBuilderFactory
@@ -145,6 +171,10 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Job with listener using implements JobExecutionListener
+	 * @return Job
+	 */
 	@Bean
 	public  Job job1() {
 		return jobBuilderFactory
@@ -155,6 +185,10 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Job with listener using annotations
+	 * @return Job
+	 */
 	@Bean
 	public Job job2() {
 		return jobBuilderFactory
@@ -166,6 +200,51 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Job that illustrates Context modifications
+	 * @return Job
+	 */
+	@Bean
+	public Job JobWithContextModification() {
+		return jobBuilderFactory
+				.get("JobWithContextModification")
+				.start(stepWithContextModification())
+				.incrementer(new ParameterAddRunTime())
+				.build();
+	}
+
+	/**
+	 * Local Class used to modify the Job Context
+	 */
+	public static class TaskletWithContextModification implements Tasklet {
+
+		private static String fileNameKey = "fileName";
+		private static String helloMsg = "Modification du contexte du job: {}";
+		private static String contextMsg = "Ajout au contexte de la valeur: {}";
+
+		@Override
+		public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+			logger.info(helloMsg, chunkContext.getStepContext().getJobName());
+
+			String fileName = (String) chunkContext.getStepContext().getJobParameters().get(fileNameKey);
+
+			ExecutionContext stepContext = chunkContext.getStepContext().getStepExecution().getExecutionContext();
+
+			ExecutionContext jobContext = chunkContext.getStepContext().getStepExecution().getJobExecution().getExecutionContext();
+
+			stepContext.put(fileNameKey, fileName);
+			jobContext.put(fileNameKey, fileName);
+
+			logger.info(contextMsg, fileName);
+
+			return RepeatStatus.FINISHED;
+		}
+	}
+
+	/**
+	 * Run every Jobs
+	 * @param args Parameters
+	 */
 	public static void main(String[] args) {
 		SpringApplication.run(SpringBatchHelloWorldApplication.class, args);
 	}
