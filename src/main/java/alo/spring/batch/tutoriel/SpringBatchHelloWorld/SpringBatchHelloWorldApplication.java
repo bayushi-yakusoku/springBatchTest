@@ -1,5 +1,7 @@
 package alo.spring.batch.tutoriel.SpringBatchHelloWorld;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -22,6 +24,8 @@ import java.util.Arrays;
 @EnableBatchProcessing
 @SpringBootApplication
 public class SpringBatchHelloWorldApplication {
+
+	private static final Log logger = LogFactory.getLog(SpringBatchHelloWorldApplication.class);
 
 	@Autowired
 	private JobBuilderFactory jobBuilderFactory;
@@ -67,7 +71,8 @@ public class SpringBatchHelloWorldApplication {
 		return this.stepBuilderFactory
 				.get("step1")
 				.tasklet((contribution, chunkContext) -> {
-					System.out.println("Hello, World!");
+					logger.info("Hello, World!");
+
 					return RepeatStatus.FINISHED;
 				})
 				.build();
@@ -86,8 +91,7 @@ public class SpringBatchHelloWorldApplication {
 					public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) {
 
 						String name = (String) chunkContext.getStepContext().getJobParameters().get("name");
-
-						System.out.println("Hello, World!, parameter Name:" + name);
+						logger.info("Hello, World!, parameter Name:" + name);
 
 						return RepeatStatus.FINISHED;
 					}
@@ -108,8 +112,8 @@ public class SpringBatchHelloWorldApplication {
 		return new Tasklet() {
 			@Override
 			public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) {
+				logger.info("Parameter name:" + name);
 
-				System.out.println("Parameter name:" + name);
 				return RepeatStatus.FINISHED;
 			}
 		};
@@ -146,6 +150,7 @@ public class SpringBatchHelloWorldApplication {
 				.get("job1")
 				.start(stepWithParameter())
 				.incrementer(new ParameterAddRunTime())
+				.listener(new JobLoggerListener())
 				.build();
 	}
 
