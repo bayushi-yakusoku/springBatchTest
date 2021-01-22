@@ -1,7 +1,7 @@
 package alo.spring.batch.tutoriel.SpringBatchHelloWorld;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -25,7 +25,7 @@ import java.util.Arrays;
 @SpringBootApplication
 public class SpringBatchHelloWorldApplication {
 
-	private static final Log logger = LogFactory.getLog(SpringBatchHelloWorldApplication.class);
+	private static Logger logger = LoggerFactory.getLogger(SpringBatchHelloWorldApplication.class);
 
 	@Autowired
 	private JobBuilderFactory jobBuilderFactory;

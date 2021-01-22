@@ -1,8 +1,8 @@
 package alo.spring.batch.tutoriel.SpringBatchHelloWorld;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.batch.core.JobParameter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.JobParametersIncrementer;
@@ -15,7 +15,7 @@ import java.util.Date;
  */
 public class ParameterAddRunTime implements JobParametersIncrementer {
 
-    private static final Log logger = LogFactory.getLog(ParameterAddRunTime.class);
+    private static Logger logger = LoggerFactory.getLogger(ParameterAddRunTime.class);
 
     private static String runTimeKey = "run.time";
 
