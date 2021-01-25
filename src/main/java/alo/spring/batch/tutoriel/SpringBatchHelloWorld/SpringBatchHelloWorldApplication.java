@@ -13,6 +13,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
+import org.springframework.batch.core.step.tasklet.SystemCommandTasklet;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -196,6 +197,23 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	@Bean
+	public Tasklet systemCommandTasklet() {
+		SystemCommandTasklet systemCommandTasklet = new SystemCommandTasklet();
+
+		systemCommandTasklet.setCommand("rm ./pouf.tmp");
+		systemCommandTasklet.setTimeout(10000);
+
+		return systemCommandTasklet;
+	}
+
+	@Bean
+	public Step stepSystem() {
+		return stepBuilderFactory
+				.get("Step System")
+				.tasklet(systemCommandTasklet())
+				.build();
+	}
 
 	/* ********************************************
 	   JOBS
@@ -295,6 +313,15 @@ public class SpringBatchHelloWorldApplication {
 		return jobBuilderFactory
 				.get("Job with Callable Step")
 				.start(callableStep())
+				.incrementer(new ParameterAddRunTime())
+				.build();
+	}
+
+	@Bean
+	public Job jobWithSystemCommand() {
+		return jobBuilderFactory
+				.get("Job with Sytem call")
+				.start(stepSystem())
 				.incrementer(new ParameterAddRunTime())
 				.build();
 	}
