@@ -12,6 +12,7 @@ import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.core.scope.context.ChunkContext;
+import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -20,8 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 
 @EnableBatchProcessing
 @SpringBootApplication
@@ -154,6 +155,48 @@ public class SpringBatchHelloWorldApplication {
 		return (new TaskletWithContextModification());
 	}
 
+	/**
+	 * Callable will be executed in another threat
+	 *
+	 * @return Callable
+	 */
+	@Bean
+	public Callable<RepeatStatus> callable() {
+		return () -> {
+			logger.info("Hello from callable object!");
+
+			return RepeatStatus.FINISHED;
+		};
+	}
+
+	/**
+	 * Tasklet based on callable
+	 *
+	 * @return CallableAdapter
+	 */
+	@Bean
+	public CallableTaskletAdapter tasklet() {
+		CallableTaskletAdapter callableTaskletAdapter = new CallableTaskletAdapter();
+
+		callableTaskletAdapter.setCallable(callable());
+
+		return callableTaskletAdapter;
+	}
+
+	/**
+	 * Step used for callable tasklet
+	 *
+	 * @return Step
+	 */
+	@Bean
+	public Step callableStep() {
+		return stepBuilderFactory
+				.get("callableStep")
+				.tasklet(tasklet())
+				.build();
+	}
+
+
 	/* ********************************************
 	   JOBS
 	   ******************************************** */
@@ -240,6 +283,25 @@ public class SpringBatchHelloWorldApplication {
 			return RepeatStatus.FINISHED;
 		}
 	}
+
+
+	/**
+	 * Simple job but with a callable Step
+	 *
+	 * @return Job
+	 */
+	@Bean
+	public Job jobWithCallableStep() {
+		return jobBuilderFactory
+				.get("Job with Callable Step")
+				.start(callableStep())
+				.incrementer(new ParameterAddRunTime())
+				.build();
+	}
+
+	/* ********************************************
+	   MAIN
+	   ******************************************** */
 
 	/**
 	 * Run every Jobs
