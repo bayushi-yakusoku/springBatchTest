@@ -13,6 +13,7 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
+import org.springframework.batch.core.step.tasklet.SimpleSystemProcessExitCodeMapper;
 import org.springframework.batch.core.step.tasklet.SystemCommandTasklet;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
@@ -22,6 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
@@ -197,16 +200,42 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Tasklet running a simple system script and checking its returned code
+	 *
+	 * @return tasklet
+	 */
 	@Bean
 	public Tasklet systemCommandTasklet() {
+		logger.info("Entering system tasklet...");
+
 		SystemCommandTasklet systemCommandTasklet = new SystemCommandTasklet();
 
-		systemCommandTasklet.setCommand("rm ./pouf.tmp");
+//		systemCommandTasklet.setWorkingDirectory("/home/papa/Env/Dev/tmp");
+		systemCommandTasklet.setCommand("/home/papa/Env/Dev/tmp/test.bash");
 		systemCommandTasklet.setTimeout(10000);
+		systemCommandTasklet.setInterruptOnCancel(true);
+		systemCommandTasklet.setTerminationCheckInterval(5000);
+		systemCommandTasklet.setTaskExecutor(new SimpleAsyncTaskExecutor());
+
+		systemCommandTasklet.setSystemProcessExitCodeMapper((exitCode) -> {
+			logger.info("Returned code: " + String.valueOf(exitCode));
+
+			if (exitCode == 0) {
+				return ExitStatus.COMPLETED;
+			} else {
+				return ExitStatus.FAILED;
+			}
+		});
 
 		return systemCommandTasklet;
 	}
 
+	/**
+	 * Step running a system script
+	 *
+	 * @return Step
+	 */
 	@Bean
 	public Step stepSystem() {
 		return stepBuilderFactory
@@ -317,6 +346,11 @@ public class SpringBatchHelloWorldApplication {
 				.build();
 	}
 
+	/**
+	 * Job running system command script and checking its returned code
+	 *
+	 * @return Job
+	 */
 	@Bean
 	public Job jobWithSystemCommand() {
 		return jobBuilderFactory
