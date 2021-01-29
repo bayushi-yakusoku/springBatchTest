@@ -8,18 +8,19 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
+import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
 import org.springframework.batch.item.file.mapping.PassThroughLineMapper;
 import org.springframework.batch.item.file.transform.PassThroughLineAggregator;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 
 @Configuration
 public class FirstChunkJob {
@@ -47,6 +48,48 @@ public class FirstChunkJob {
     }
 
     /* ***********************************************************************************************************
+       STEP FOR PRE-PROCESSING THE FILE
+     * ***********************************************************************************************************/
+
+    @Bean
+    public Tasklet taskletPreProcessingFile() {
+        return (contribution, chunkContext) -> {
+            logger.info("Pre-processing the file...");
+
+                return RepeatStatus.FINISHED;
+        };
+    }
+
+    @Bean
+    public Step stepPreProcessingFile() {
+        return stepBuilderFactory
+                .get("Pre-Processing File Step")
+                .tasklet(taskletPreProcessingFile())
+                .build();
+    }
+
+    /* ***********************************************************************************************************
+       STEP FOR FAILURE
+     * ***********************************************************************************************************/
+
+    @Bean
+    public Tasklet taskletOnFailure() {
+        return (contribution, chunkContext) -> {
+            logger.error("Error during processing...");
+
+            return RepeatStatus.FINISHED;
+        };
+    }
+
+    @Bean
+    public Step stepOnFailure() {
+        return stepBuilderFactory
+                .get("On Failure Step")
+                .tasklet(taskletOnFailure())
+                .build();
+    }
+
+    /* ***********************************************************************************************************
        STEP THAT PROCESS A FILE
      * ***********************************************************************************************************/
 
@@ -60,7 +103,7 @@ public class FirstChunkJob {
     @Bean
     @StepScope
     public FlatFileItemReader<String> itemReader(@Value("#{jobParameters['inputFile']}") Resource inputFile) {
-        logger.info("inputFile: " + inputFile);
+        logger.info("inputFile: " + inputFile.getFilename());
 
         return new FlatFileItemReaderBuilder<String>()
                 .name("itemReader")
@@ -93,7 +136,7 @@ public class FirstChunkJob {
      *
      * @return Step
      */
-    public Step stepReadFile() {
+    public Step stepProcessingFile() {
         return stepBuilderFactory
                 .get("Step read file")
                 .<String, String>chunk(10)
@@ -114,10 +157,21 @@ public class FirstChunkJob {
     @Bean
     public Job jobReadFile() {
         return jobBuilderFactory
-                .get("Job Read file")
-                .start(stepReadFile())
+                .get("Job Processing file")
                 .validator(parameterValidator())
                 .incrementer(new ParameterAddRunTime())
+
+                // Pre-processing
+                .start(stepPreProcessingFile())
+                .on("FAILED").to(stepOnFailure())
+
+                // Processing
+                .from(stepPreProcessingFile())
+                .on("*")
+                .to(stepProcessingFile())
+                .on("FAILED").to(stepOnFailure())
+
+                .end()
                 .build();
     }
 }
