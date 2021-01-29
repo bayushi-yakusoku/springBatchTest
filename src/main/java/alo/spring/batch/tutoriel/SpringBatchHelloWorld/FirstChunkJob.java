@@ -23,7 +23,7 @@ import org.springframework.core.io.ResourceLoader;
 
 @Configuration
 public class FirstChunkJob {
-    private static Logger logger = LoggerFactory.getLogger(SpringBatchHelloWorldApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpringBatchHelloWorldApplication.class);
 
     @Autowired
     private JobBuilderFactory jobBuilderFactory;
@@ -31,15 +31,32 @@ public class FirstChunkJob {
     @Autowired
     private StepBuilderFactory stepBuilderFactory;
 
-    @Autowired
-    private ResourceLoader resourceLoader;
+    /* ***********************************************************************************************************
+       PARAMETERS VALIDATION
+     * ***********************************************************************************************************/
 
+    /**
+     * Parameters validation
+     *
+     * @return Validator
+     */
     public DefaultJobParametersValidator parameterValidator() {
         return new DefaultJobParametersValidator(
                 new String[]{"inputFile", "outputFile"},
                 new String[]{"run.time", "fileName", "executionDate"});
     }
 
+    /* ***********************************************************************************************************
+       STEP THAT PROCESS A FILE
+     * ***********************************************************************************************************/
+
+    /**
+     * Item Reader
+     *
+     * @param inputFile file to be read
+     *
+     * @return ItemReader
+     */
     @Bean
     @StepScope
     public FlatFileItemReader<String> itemReader(@Value("#{jobParameters['inputFile']}") Resource inputFile) {
@@ -52,6 +69,13 @@ public class FirstChunkJob {
                 .build();
     }
 
+    /**
+     * Item Writer
+     *
+     * @param outputFile file to be created
+     *
+     * @return ItemWriter
+     */
     @Bean
     @StepScope
     public FlatFileItemWriter<String> itemWriter(@Value("#{jobParameters['outputFile']}") Resource outputFile) {
@@ -64,6 +88,11 @@ public class FirstChunkJob {
                 .build();
     }
 
+    /**
+     * Step for processing a file
+     *
+     * @return Step
+     */
     public Step stepReadFile() {
         return stepBuilderFactory
                 .get("Step read file")
@@ -73,6 +102,15 @@ public class FirstChunkJob {
                 .build();
     }
 
+    /* ***********************************************************************************************************
+       JOB FOR PROCESSING A FILE
+     * ***********************************************************************************************************/
+
+    /**
+     * Job for processing File
+     *
+     * @return Job
+     */
     @Bean
     public Job jobReadFile() {
         return jobBuilderFactory
