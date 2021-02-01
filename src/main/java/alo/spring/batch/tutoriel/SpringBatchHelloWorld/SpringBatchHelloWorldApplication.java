@@ -252,7 +252,7 @@ public class SpringBatchHelloWorldApplication {
 	 * Job with increment parameters
 	 * @return job
 	 */
-//	@Bean
+	@Bean
 	public Job job() {
 		return this.jobBuilderFactory
 				.get("job")
@@ -265,7 +265,7 @@ public class SpringBatchHelloWorldApplication {
 	 * Job with listener using implements JobExecutionListener
 	 * @return Job
 	 */
-//	@Bean
+	@Bean
 	public  Job job1() {
 		return jobBuilderFactory
 				.get("job1")
@@ -279,7 +279,7 @@ public class SpringBatchHelloWorldApplication {
 	 * Job with listener using annotations
 	 * @return Job
 	 */
-//	@Bean
+	@Bean
 	public Job job2() {
 		return jobBuilderFactory
 				.get("job2")
@@ -294,7 +294,7 @@ public class SpringBatchHelloWorldApplication {
 	 * Job that illustrates Context modifications
 	 * @return Job
 	 */
-//	@Bean
+	@Bean
 	public Job JobWithContextModification() {
 		return jobBuilderFactory
 				.get("JobWithContextModification")
@@ -337,7 +337,7 @@ public class SpringBatchHelloWorldApplication {
 	 *
 	 * @return Job
 	 */
-//	@Bean
+	@Bean
 	public Job jobWithCallableStep() {
 		return jobBuilderFactory
 				.get("Job with Callable Step")
@@ -351,10 +351,10 @@ public class SpringBatchHelloWorldApplication {
 	 *
 	 * @return Job
 	 */
-//	@Bean
+	@Bean
 	public Job jobWithSystemCommand() {
 		return jobBuilderFactory
-				.get("Job with Sytem call")
+				.get("Job with System call")
 				.start(stepSystem())
 				.incrementer(new ParameterAddRunTime())
 				.build();
