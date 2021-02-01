@@ -44,7 +44,7 @@ public class FirstChunkJob {
     public DefaultJobParametersValidator parameterValidator() {
         return new DefaultJobParametersValidator(
                 new String[]{"inputFile", "outputFile"},
-                new String[]{"run.time", "fileName", "executionDate"});
+                new String[]{"run.time", "fileName", "executionDate", "transactionFile", "summaryFile"});
     }
 
     /* ***********************************************************************************************************

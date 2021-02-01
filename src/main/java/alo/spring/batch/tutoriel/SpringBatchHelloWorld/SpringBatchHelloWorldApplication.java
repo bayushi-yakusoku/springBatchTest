@@ -19,12 +19,15 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 
+import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 
@@ -53,7 +56,7 @@ public class SpringBatchHelloWorldApplication {
 						// Required parameters:
 						new String[] {"fileName"},
 						// Optional parameters:
-						new String[] {"currentDate", "executionDate", "run.id"});
+						new String[] {"currentDate", "executionDate", "run.id", "transactionFile", "summaryFile"});
 
 		defaultValidator.afterPropertiesSet();
 
@@ -211,7 +214,7 @@ public class SpringBatchHelloWorldApplication {
 
 		SystemCommandTasklet systemCommandTasklet = new SystemCommandTasklet();
 
-//		systemCommandTasklet.setWorkingDirectory("/home/papa/Env/Dev/tmp");
+		//systemCommandTasklet.setWorkingDirectory("/home/papa/Env/Dev/tmp");
 		systemCommandTasklet.setCommand("/home/papa/Env/Dev/tmp/test.bash");
 		systemCommandTasklet.setTimeout(10000);
 		systemCommandTasklet.setInterruptOnCancel(true);
@@ -364,11 +367,15 @@ public class SpringBatchHelloWorldApplication {
 	   MAIN
 	   ******************************************** */
 
+	private static ApplicationContext applicationContext;
+
 	/**
 	 * Run every Jobs
 	 * @param args Parameters
 	 */
 	public static void main(String[] args) {
-		SpringApplication.run(SpringBatchHelloWorldApplication.class, args);
+		applicationContext = SpringApplication.run(SpringBatchHelloWorldApplication.class, args);
+
+		String[] allBeanNames = applicationContext.getBeanDefinitionNames();
 	}
 }
